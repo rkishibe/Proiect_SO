@@ -1,0 +1,10 @@
+nume fisier: lorem_ipsum.txt
+dimensiune: 35
+identificatorul utilizatorului: 0
+timpul ultimei modificari: 15.11.2023
+contorul de legaturi: 1
+drepturi de acces user: RW-
+drepturi de acces grup: R--
+drepturi de acces altii: R--
+
+

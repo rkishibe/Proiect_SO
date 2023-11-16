@@ -1,53 +1,5 @@
-nume director: test/..
-identificatorul utilizatorului: 0
-drepturi de acces user: RWX
-drepturi de acces grup: R--
-drepturi de acces altii: ---
-
-
-nume fisier: test/fis.c
-dimensiune: 4
-identificatorul utilizatorului: 0
-timpul ultimei modificari: 09.11.2023
-contorul de legaturi: 1
-drepturi de acces user: RW-
-drepturi de acces grup: R--
-drepturi de acces altii: ---
-
-
-nume director: test/.
-identificatorul utilizatorului: 0
-drepturi de acces user: RWX
-drepturi de acces grup: R--
-drepturi de acces altii: ---
-
-
-nume fisier: test/imagine.bmp
-inaltime: 1280
-lungime: 1920
-dimensiune: 7372938
-identificatorul utilizatorului: 0
-timpul ultimei modificari: 07.11.2023
-contorul de legaturi: 1
-drepturi de acces user: RW-
-drepturi de acces grup: R--
-drepturi de acces altii: ---
-
-
-nume director: test/folder
-identificatorul utilizatorului: 0
-drepturi de acces user: RWX
-drepturi de acces grup: R--
-drepturi de acces altii: ---
-
-
-nume fisier: test/lorem_ipsum.txt
-dimensiune: 34
-identificatorul utilizatorului: 0
-timpul ultimei modificari: 07.11.2023
-contorul de legaturi: 1
-drepturi de acces user: RW-
-drepturi de acces grup: R--
-drepturi de acces altii: ---
-
-
+Nr de linii scrise pentru fis.c_statistica.txt este 10
+Nr de linii scrise pentru fiss.c_statistica.txt este 4
+Nr de linii scrise pentru folder_statistica.txt este 7
+Nr de linii scrise pentru imagine_4.bmp_statistica.txt este 12
+Nr de linii scrise pentru lorem_ipsum.txt_statistica.txt este 10
