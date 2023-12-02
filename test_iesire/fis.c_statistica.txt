@@ -1,7 +1,7 @@
 nume fisier: fis.c
-dimensiune: 4
+dimensiune: 22
 identificatorul utilizatorului: 0
-timpul ultimei modificari: 09.11.2023
+timpul ultimei modificari: 30.11.2023
 contorul de legaturi: 1
 drepturi de acces user: RW-
 drepturi de acces grup: R--

@@ -1,5 +1,5 @@
 Nr de linii scrise pentru fis.c_statistica.txt este 10
 Nr de linii scrise pentru fiss.c_statistica.txt este 4
 Nr de linii scrise pentru folder_statistica.txt este 7
-Nr de linii scrise pentru imagine_4.bmp_statistica.txt este 12
-Nr de linii scrise pentru lorem_ipsum.txt_statistica.txt este 10
+Nr de linii scrise pentru imagine_2.bmp_statistica.txt este 12
+Nr de linii scrise pentru a.txt_statistica.txt este 10

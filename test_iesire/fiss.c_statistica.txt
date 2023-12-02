@@ -1,4 +1,4 @@
 nume legatura: fiss.c
 dimensiune legatura: 5
-dimensiune fisier: 4
+dimensiune fisier: 22
 drepturi de acces user legatura: RWX
