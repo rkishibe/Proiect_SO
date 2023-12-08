@@ -15,6 +15,7 @@
 #define BMP_SIZE_OFFSET 2
 #define BMP_WIDTH_OFFSET 18
 #define BMP_HEIGHT_OFFSET 22
+#define BMP_BITCOUNT_OFFSET 28
 #define BMP_IMAGE_SIZE_OFFSET 34
 #define BMP_HEADER_SIZE 54
 #define getName(var) #var
@@ -24,7 +25,7 @@ typedef struct RGB
     uint8_t red;
     uint8_t green;
     uint8_t blue;
-} RGB;
+} RGB; //struct to store a pixel's data
 
 typedef struct BMPHeader
 {
@@ -32,9 +33,11 @@ typedef struct BMPHeader
     int32_t width_px;
     int32_t height_px;
     uint32_t image_size_bytes;
+    uint16_t bitCount;
     RGB rgb;
-} BMPHeader;
+} BMPHeader; //struct to store required metadata
 
+/* utility functions for common operations with files and pipes */
 int open_file(char *filename, int flag)
 {
     int fd_stat;
@@ -72,7 +75,9 @@ void close_pipe_write(int pipe)
         exit(EXIT_FAILURE);
     }
 }
+/*end of utility functions*/
 
+/*bmp processing functions*/
 void read_bmp_header(int fd, BMPHeader *bmp_header)
 {
     char buffer[54];
@@ -90,6 +95,7 @@ void read_bmp_header(int fd, BMPHeader *bmp_header)
     bmp_header->size = *((uint32_t *)&buffer[BMP_SIZE_OFFSET - BMP_SIZE_OFFSET]);
     bmp_header->width_px = *((int32_t *)&buffer[BMP_WIDTH_OFFSET - BMP_SIZE_OFFSET]);
     bmp_header->height_px = *((int32_t *)&buffer[BMP_HEIGHT_OFFSET - BMP_SIZE_OFFSET]);
+    bmp_header->bitCount = *((uint16_t *)&buffer[BMP_BITCOUNT_OFFSET - BMP_SIZE_OFFSET]);
     bmp_header->image_size_bytes = *((uint32_t *)&buffer[BMP_IMAGE_SIZE_OFFSET - BMP_SIZE_OFFSET]);
 }
 
@@ -117,6 +123,21 @@ void read_bmp_pixel_data(int fd, BMPHeader *bmp_header, RGB **pixels)
     }
 }
 
+void write_pixel_data(int bmp_file, BMPHeader *bmp_header, RGB *pixels)
+{
+    if (lseek(bmp_file, BMP_HEADER_SIZE, SEEK_SET) == -1)
+    {
+        perror("Error seeking to pixel data");
+        exit(EXIT_FAILURE);
+    }
+
+    if (write(bmp_file, pixels, bmp_header->image_size_bytes) != bmp_header->image_size_bytes)
+    {
+        perror("Error writing pixel data");
+        exit(EXIT_FAILURE);
+    }
+}
+
 void convert_bmp(int fd, BMPHeader *bmp_header, RGB *pixels)
 {
     uint8_t gray;
@@ -138,21 +159,6 @@ void convert_bmp(int fd, BMPHeader *bmp_header, RGB *pixels)
     }
 }
 
-void write_pixel_data(int bmp_file, BMPHeader *bmp_header, RGB *pixels)
-{
-    if (lseek(bmp_file, BMP_HEADER_SIZE, SEEK_SET) == -1)
-    {
-        perror("Error seeking to pixel data");
-        exit(EXIT_FAILURE);
-    }
-
-    if (write(bmp_file, pixels, bmp_header->image_size_bytes) != bmp_header->image_size_bytes)
-    {
-        perror("Error writing pixel data");
-        exit(EXIT_FAILURE);
-    }
-}
-
 void convert(char *full_path)
 {
     int bmp_file;
@@ -163,7 +169,9 @@ void convert(char *full_path)
 
     read_bmp_header(bmp_file, &bmp_header);
     read_bmp_pixel_data(bmp_file, &bmp_header, &pixels);
+
     convert_bmp(bmp_file, &bmp_header, pixels);
+
     write_pixel_data(bmp_file, &bmp_header, pixels);
 }
 
@@ -228,7 +236,9 @@ int is_bmp(char *filename, char *input_dir)
     else
         return 0;
 }
+/*end of bmp processing functions*/
 
+/*statistics functions*/
 int count_lines(char *filename)
 {
     int fd = open_file(filename, O_RDONLY);
@@ -372,6 +382,49 @@ void write_statistica_fisiere(const char *input_path, char *output_dir, struct s
     free(input_path_copy2);
 }
 
+void count_lines_proc(char *full_path, struct stat status, int fis_statistica, struct dirent *dir_ent, char *full_path_stat, char *output_dir)
+{
+    int written_stat;
+    char buffer[1024];
+    pid_t pid = fork();
+    if (pid == 0)
+    { // Procesul copil
+
+        write_statistica_fisiere(full_path, output_dir, &status);
+        written_stat = sprintf(buffer, "Nr de linii scrise pentru %s_statistica.txt este %d\n", dir_ent->d_name, count_lines(full_path_stat));
+        write(fis_statistica, buffer, written_stat);
+        exit(0); // Terminarea procesului copil
+    }
+}
+/*end of statistics functions*/
+
+/*count of charcter occurences using the shell script*/
+int count_sentences(int FF[2], int PF[2], char *c)
+{
+    pid_t pid3 = fork(); 
+    if (pid3 == 0)
+    {
+        close_pipe_write(FF[1]);
+
+        close_pipe_read(PF[0]);
+        dup2(FF[0], 0);
+        dup2(PF[1], 1);
+
+        close_pipe_write(PF[1]);
+        close_pipe_read(FF[0]);
+
+        execlp("bash", "bash", "caracter.sh", c, (char *)NULL);
+        perror("Failed to execute caracter.sh");
+        exit(EXIT_FAILURE);
+    }
+    else if (pid3 < 0)
+    {
+        perror("Eroare la fork");
+        exit(EXIT_FAILURE);
+    }
+    return pid3;
+}
+
 int main(int argc, char *argv[])
 {
     int PF[2]; // capete de scrie si citire pt parinte-fiu
@@ -440,16 +493,7 @@ int main(int argc, char *argv[])
                         exit(EXIT_FAILURE);
                     }
 
-                    pid_t pid = fork();
-                    if (pid == 0)
-                    { // Procesul copil
-
-                        write_statistica_fisiere(full_path, argv[2], &status);
-                        // convert(full_path);
-                        written_stat = sprintf(buffer, "Nr de linii scrise pentru %s_statistica.txt este %d\n", dir_ent->d_name, count_lines(full_path_stat));
-                        write(fis_statistica, buffer, written_stat);
-                        exit(0); // Terminarea procesului copil
-                    }
+                    count_lines_proc(full_path, status, fis_statistica, dir_ent, full_path_stat, argv[2]);
                 } //! gata bmp
                 else
                 { //! fis normal
@@ -479,33 +523,12 @@ int main(int argc, char *argv[])
                         perror("Failed to execute cat");
                         exit(EXIT_FAILURE);
                     }
-                    pid_t pid3 = fork(); //! count propoz
-                    if (pid3 == 0)
-                    {
-                        close_pipe_write(FF[1]);
-
-                        close_pipe_read(PF[0]);
-                        dup2(FF[0], 0);
-                        dup2(PF[1], 1);
-
-                        close_pipe_write(PF[1]);
-                        close_pipe_read(FF[0]);
-
-                        char script_arg[2] = {c, '\0'};
-                        execlp("bash", "bash", "caracter.sh", script_arg, (char *)NULL);
-                        perror("Failed to execute caracter.sh");
-                        exit(EXIT_FAILURE);
-                    }
-                    else if (pid3 < 0)
-                    {
-                        perror("Eroare la fork");
-                        exit(EXIT_FAILURE);
-                    }
+                    pid_t pid3=count_sentences(FF, PF ,argv[3]); //! count propoz
 
                     close_pipe_read(FF[0]);
                     close_pipe_write(FF[1]);
                     close_pipe_write(PF[1]);
-                    
+
                     int status;
                     waitpid(pid, &status, 0);
                     waitpid(pid3, NULL, 0);
@@ -514,7 +537,6 @@ int main(int argc, char *argv[])
                     {
                         printf("S-a încheiat procesul cu pid-ul %d și codul %d\n", pid3, WEXITSTATUS(status));
                     }
-
                     char buffer[512];
                     if (read(PF[0], buffer, sizeof(buffer)) < 0)
                     {
@@ -530,29 +552,11 @@ int main(int argc, char *argv[])
             }
             if (S_ISDIR(status.st_mode))
             {
-                pid_t pid = fork();
-                if (pid == 0)
-                { // Procesul copil
-
-                    write_statistica_fisiere(full_path, argv[2], &status);
-                    written_stat = sprintf(buffer, "Nr de linii scrise pentru %s_statistica.txt este %d\n", dir_ent->d_name, count_lines(full_path_stat));
-                    write(fis_statistica, buffer, written_stat);
-                    exit(0); // Terminarea procesului copil
-                }
+                count_lines_proc(full_path, status, fis_statistica, dir_ent, full_path_stat, argv[2]);
             }
-
             if (S_ISLNK(status.st_mode))
             {
-                pid_t pid = fork();
-                if (pid == 0)
-                { // Procesul copil
-
-                    write_statistica_fisiere(full_path, argv[2], &status);
-                    // convert(full_path);
-                    written_stat = sprintf(buffer, "Nr de linii scrise pentru %s_statistica.txt este %d\n", dir_ent->d_name, count_lines(full_path_stat));
-                    write(fis_statistica, buffer, written_stat);
-                    exit(0); // Terminarea procesului copil
-                }
+                count_lines_proc(full_path, status, fis_statistica, dir_ent, full_path_stat, argv[2]);
             }
         }
         else
@@ -564,8 +568,7 @@ int main(int argc, char *argv[])
     int pidfiu;
     while ((pidfiu = wait(&status2)) > 0)
     {
-
-        if (WIFEXITED(status2)) // daca am obtinut status de iesire
+        if (WIFEXITED(status2))
         {
             printf("S-a încheiat procesul cu pid-ul %d și codul %d\n", pidfiu, WEXITSTATUS(status2));
         }
